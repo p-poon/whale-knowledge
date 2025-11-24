@@ -4,3 +4,18 @@ description: Production-ready RAG system with MCP integration
 show_downloads: true
 github:
   repository_url: https://github.com/your-org/whale-knowledge
+
+# Markdown processing
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Plugins
+plugins:
+  - jekyll-relative-links
+
+# Relative links
+relative_links:
+  enabled: true
+  collections: true
