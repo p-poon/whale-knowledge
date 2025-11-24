@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "whale-knowledge": {
+      "command": "python",
+      "args": ["-m", "app.mcp_server"],
+      "cwd": "/path/to/whale-knowledge/backend",
+      "env": {
+        "DATABASE_URL": "postgresql://whale_user:whale_pass@localhost:5432/whale_knowledge",
+        "PINECONE_API_KEY": "your_pinecone_api_key",
+        "PINECONE_ENVIRONMENT": "us-west1-gcp",
+        "PINECONE_INDEX_NAME": "whale-knowledge"
+      }
+    }
+  }
+}
