@@ -91,6 +91,47 @@ class ProcessingJob(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class APIUsageAudit(Base):
+    """Track API usage for JINA and Pinecone services."""
+    __tablename__ = "api_usage_audit"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Service identification
+    service = Column(String, nullable=False, index=True)  # 'jina' or 'pinecone'
+    operation = Column(String, nullable=False, index=True)  # 'scrape', 'query', 'upsert', 'delete'
+
+    # Request details
+    request_id = Column(String, unique=True, index=True)  # UUID for tracking
+    endpoint = Column(String, nullable=True)  # API endpoint called
+
+    # Usage metrics - JINA
+    jina_input_chars = Column(Integer, nullable=True)
+    jina_output_chars = Column(Integer, nullable=True)
+    jina_estimated_tokens = Column(Integer, nullable=True)
+    jina_response_headers = Column(JSON, nullable=True)  # Store all headers
+
+    # Usage metrics - Pinecone
+    pinecone_operation = Column(String, nullable=True)  # 'read', 'write', 'delete'
+    pinecone_vector_count = Column(Integer, nullable=True)
+    pinecone_dimension = Column(Integer, nullable=True)
+    pinecone_namespace = Column(String, nullable=True)
+    pinecone_read_units = Column(Integer, nullable=True)  # Estimated
+    pinecone_write_units = Column(Integer, nullable=True)  # Estimated
+
+    # Associated entities
+    document_id = Column(Integer, nullable=True, index=True)
+    user_id = Column(String, nullable=True, index=True)  # For future multi-user
+
+    # Status and timing
+    status = Column(String, default="success")  # success, failed, timeout
+    error_message = Column(Text, nullable=True)
+    duration_ms = Column(Integer, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, server_default=func.now(), index=True)
+
+
 # Database initialization
 def init_db():
     """Initialize database tables."""

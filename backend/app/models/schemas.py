@@ -195,3 +195,102 @@ class StatsResponse(BaseModel):
     documents_by_status: Dict[str, int]
     documents_by_industry: Dict[str, int]
     pinecone_stats: Dict[str, Any]
+
+
+# API Usage Audit Schemas
+class ServiceType(str, Enum):
+    """Service type for API usage audit."""
+    JINA = "jina"
+    PINECONE = "pinecone"
+
+
+class AuditStatus(str, Enum):
+    """Status for API usage audit."""
+    SUCCESS = "success"
+    FAILED = "failed"
+    TIMEOUT = "timeout"
+
+
+class APIUsageAuditResponse(BaseModel):
+    """Schema for API usage audit response."""
+    id: int
+    service: str
+    operation: str
+    request_id: str
+
+    # JINA metrics
+    jina_input_chars: Optional[int] = None
+    jina_output_chars: Optional[int] = None
+    jina_estimated_tokens: Optional[int] = None
+    jina_response_headers: Optional[Dict[str, Any]] = None
+
+    # Pinecone metrics
+    pinecone_operation: Optional[str] = None
+    pinecone_vector_count: Optional[int] = None
+    pinecone_dimension: Optional[int] = None
+    pinecone_namespace: Optional[str] = None
+    pinecone_read_units: Optional[int] = None
+    pinecone_write_units: Optional[int] = None
+
+    # Associated entities
+    document_id: Optional[int] = None
+    user_id: Optional[str] = None
+
+    # Status
+    status: str
+    error_message: Optional[str] = None
+    duration_ms: Optional[int] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UsageSummary(BaseModel):
+    """Schema for aggregated usage summary."""
+    service: str
+    operation: str
+    total_calls: int
+    successful_calls: int
+    failed_calls: int
+
+    # JINA totals
+    total_jina_tokens: Optional[int] = None
+    total_jina_input_chars: Optional[int] = None
+    total_jina_output_chars: Optional[int] = None
+
+    # Pinecone totals
+    total_pinecone_vectors: Optional[int] = None
+    total_read_units: Optional[int] = None
+    total_write_units: Optional[int] = None
+
+    # Timing
+    avg_duration_ms: Optional[float] = None
+    min_duration_ms: Optional[int] = None
+    max_duration_ms: Optional[int] = None
+
+
+class UsageStatsResponse(BaseModel):
+    """Schema for overall usage statistics."""
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    summaries: List[UsageSummary]
+    total_api_calls: int
+
+    # Cost estimates
+    estimated_jina_cost: Optional[float] = None
+    estimated_pinecone_cost: Optional[float] = None
+    estimated_total_cost: Optional[float] = None
+
+
+class CostEstimate(BaseModel):
+    """Schema for cost estimation."""
+    jina_tokens_used: int
+    jina_cost: float
+    pinecone_read_units: int
+    pinecone_write_units: int
+    pinecone_read_cost: float
+    pinecone_write_cost: float
+    total_cost: float
+    period_start: datetime
+    period_end: datetime

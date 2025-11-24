@@ -1,8 +1,11 @@
 from pinecone import Pinecone, ServerlessSpec
 from typing import List, Dict, Any, Optional
 import logging
+import time
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.services.audit_service import get_audit_service
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +54,9 @@ class PineconeClient:
     async def upsert_vectors(
         self,
         vectors: List[tuple],  # [(id, embedding, metadata), ...]
-        namespace: str = ""
+        namespace: str = "",
+        db: Optional[Session] = None,
+        document_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Upsert vectors to Pinecone.
@@ -59,19 +64,67 @@ class PineconeClient:
         Args:
             vectors: List of tuples (id, embedding, metadata)
             namespace: Optional namespace for multi-tenancy
+            db: Database session for audit logging (optional)
+            document_id: Document ID for tracking (optional)
 
         Returns:
             Upsert response from Pinecone
         """
+        start_time = time.time()
+        audit_service = get_audit_service()
+        status = "success"
+        error_msg = None
+        vector_count = len(vectors)
+
         try:
             response = self.index.upsert(
                 vectors=vectors,
                 namespace=namespace
             )
-            logger.info(f"Upserted {len(vectors)} vectors to Pinecone")
+            logger.info(f"Upserted {vector_count} vectors to Pinecone")
+
+            # Log to audit table if db session provided
+            if db:
+                duration_ms = int((time.time() - start_time) * 1000)
+                # Calculate write units (1 write unit = 1 vector upserted)
+                write_units = vector_count
+
+                audit_service.log_api_usage(
+                    db=db,
+                    service="pinecone",
+                    operation="upsert",
+                    status=status,
+                    pinecone_operation="write",
+                    pinecone_vector_count=vector_count,
+                    pinecone_dimension=self.dimension,
+                    pinecone_namespace=namespace if namespace else "default",
+                    pinecone_write_units=write_units,
+                    document_id=document_id,
+                    duration_ms=duration_ms
+                )
+
             return response
         except Exception as e:
+            status = "failed"
+            error_msg = str(e)
             logger.error(f"Error upserting vectors: {e}")
+
+            # Log failure to audit
+            if db:
+                duration_ms = int((time.time() - start_time) * 1000)
+                audit_service.log_api_usage(
+                    db=db,
+                    service="pinecone",
+                    operation="upsert",
+                    status=status,
+                    pinecone_operation="write",
+                    pinecone_vector_count=vector_count,
+                    pinecone_dimension=self.dimension,
+                    pinecone_namespace=namespace if namespace else "default",
+                    error_message=error_msg,
+                    document_id=document_id,
+                    duration_ms=duration_ms
+                )
             raise
 
     async def query(
@@ -80,7 +133,9 @@ class PineconeClient:
         top_k: int = 5,
         filter: Optional[Dict[str, Any]] = None,
         namespace: str = "",
-        include_metadata: bool = True
+        include_metadata: bool = True,
+        db: Optional[Session] = None,
+        document_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Query Pinecone for similar vectors.
@@ -91,10 +146,17 @@ class PineconeClient:
             filter: Metadata filters
             namespace: Optional namespace
             include_metadata: Whether to include metadata in results
+            db: Database session for audit logging (optional)
+            document_id: Document ID for tracking (optional)
 
         Returns:
             Query results from Pinecone
         """
+        start_time = time.time()
+        audit_service = get_audit_service()
+        status = "success"
+        error_msg = None
+
         try:
             response = self.index.query(
                 vector=vector,
@@ -104,9 +166,49 @@ class PineconeClient:
                 include_metadata=include_metadata,
                 include_values=False
             )
+
+            # Log to audit table if db session provided
+            if db:
+                duration_ms = int((time.time() - start_time) * 1000)
+                # Calculate read units (1 read unit = top_k vectors queried)
+                read_units = top_k
+                actual_results = len(response.matches) if hasattr(response, 'matches') else 0
+
+                audit_service.log_api_usage(
+                    db=db,
+                    service="pinecone",
+                    operation="query",
+                    status=status,
+                    pinecone_operation="read",
+                    pinecone_vector_count=actual_results,
+                    pinecone_dimension=self.dimension,
+                    pinecone_namespace=namespace if namespace else "default",
+                    pinecone_read_units=read_units,
+                    document_id=document_id,
+                    duration_ms=duration_ms
+                )
+
             return response
         except Exception as e:
+            status = "failed"
+            error_msg = str(e)
             logger.error(f"Error querying Pinecone: {e}")
+
+            # Log failure to audit
+            if db:
+                duration_ms = int((time.time() - start_time) * 1000)
+                audit_service.log_api_usage(
+                    db=db,
+                    service="pinecone",
+                    operation="query",
+                    status=status,
+                    pinecone_operation="read",
+                    pinecone_dimension=self.dimension,
+                    pinecone_namespace=namespace if namespace else "default",
+                    error_message=error_msg,
+                    document_id=document_id,
+                    duration_ms=duration_ms
+                )
             raise
 
     async def delete_vectors(

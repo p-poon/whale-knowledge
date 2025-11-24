@@ -5,7 +5,7 @@ import logging
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.pinecone_client import pinecone_client
-from app.api import documents, query, evaluation, stats
+from app.api import documents, query, evaluation, stats, audit
 
 # Configure logging
 logging.basicConfig(
@@ -36,6 +36,7 @@ app.include_router(documents.router)
 app.include_router(query.router)
 app.include_router(evaluation.router)
 app.include_router(stats.router)
+app.include_router(audit.router)
 
 
 @app.on_event("startup")

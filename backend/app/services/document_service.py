@@ -133,6 +133,7 @@ class DocumentService:
         Returns:
             Created Document object
         """
+        document = None
         try:
             # Scrape content
             scrape_result = await self.jina_scraper.scrape_url(url)

@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 
+    # API Usage Pricing (for cost estimation)
+    jina_cost_per_1k_tokens: float = 0.00005  # $0.050 per 1M tokens 
+    pinecone_read_unit_cost: float = 0.00004  # $0.04 per 1M read units
+    pinecone_write_unit_cost: float = 0.0002  # $0.20 per 1M write units
+
     class Config:
         env_file = ".env"
         case_sensitive = False
