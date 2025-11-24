@@ -30,7 +30,7 @@ class PineconeClient:
                     metric="cosine",
                     spec=ServerlessSpec(
                         cloud="aws",
-                        region="us-west-2"
+                        region="us-east-1"
                     )
                 )
 
