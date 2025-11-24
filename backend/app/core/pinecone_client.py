@@ -144,6 +144,73 @@ class PineconeClient:
             logger.error(f"Error getting Pinecone stats: {e}")
             raise
 
+    async def check_vectors_exist(
+        self,
+        ids: List[str],
+        namespace: str = ""
+    ) -> Dict[str, bool]:
+        """
+        Check if vectors exist in Pinecone.
+
+        Args:
+            ids: List of vector IDs to check
+            namespace: Optional namespace
+
+        Returns:
+            Dictionary mapping vector IDs to existence boolean
+        """
+        try:
+            result = {}
+            # Pinecone doesn't have a direct "exists" check, so we fetch vectors
+            # If a vector doesn't exist, it won't be in the response
+            fetch_response = self.index.fetch(ids=ids, namespace=namespace)
+
+            existing_ids = set(fetch_response.vectors.keys())
+            for vector_id in ids:
+                result[vector_id] = vector_id in existing_ids
+
+            logger.info(f"Checked {len(ids)} vectors, {len(existing_ids)} exist")
+            return result
+        except Exception as e:
+            logger.error(f"Error checking vector existence: {e}")
+            raise
+
+    async def fetch_vectors_by_filter(
+        self,
+        filter: Dict[str, Any],
+        namespace: str = "",
+        top_k: int = 10000
+    ) -> List[str]:
+        """
+        Fetch vector IDs by metadata filter.
+
+        Args:
+            filter: Metadata filter (e.g., {"document_id": 123})
+            namespace: Optional namespace
+            top_k: Maximum number of IDs to return
+
+        Returns:
+            List of vector IDs matching the filter
+        """
+        try:
+            # Query with a dummy vector to get IDs by filter
+            # Use sparse query to avoid needing actual embeddings
+            response = self.index.query(
+                vector=[0.0] * self.dimension,
+                filter=filter,
+                namespace=namespace,
+                top_k=top_k,
+                include_metadata=False,
+                include_values=False
+            )
+
+            vector_ids = [match.id for match in response.matches]
+            logger.info(f"Found {len(vector_ids)} vectors matching filter")
+            return vector_ids
+        except Exception as e:
+            logger.error(f"Error fetching vectors by filter: {e}")
+            raise
+
 
 # Global Pinecone client instance
 pinecone_client = PineconeClient()

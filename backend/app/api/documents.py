@@ -21,9 +21,19 @@ async def upload_pdf(
     file: UploadFile = File(...),
     industry: Optional[str] = Form(None),
     author: Optional[str] = Form(None),
+    skip_existing: bool = Form(True),
     db: Session = Depends(get_db)
 ):
-    """Upload and process a PDF document."""
+    """
+    Upload and process a PDF document.
+
+    Args:
+        file: PDF file to upload
+        industry: Industry classification (optional)
+        author: Document author (optional)
+        skip_existing: If True, skip vector creation if vectors already exist for this document
+        db: Database session
+    """
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
@@ -45,7 +55,8 @@ async def upload_pdf(
             db=db,
             file_path=temp_path,
             filename=file.filename,
-            metadata=metadata
+            metadata=metadata,
+            skip_existing=skip_existing
         )
 
         return document
@@ -59,7 +70,16 @@ async def scrape_url(
     request: WebScrapRequest,
     db: Session = Depends(get_db)
 ):
-    """Scrape content from a URL and add to knowledge base."""
+    """
+    Scrape content from a URL and add to knowledge base.
+
+    Args:
+        request: Web scraping request with URL and metadata
+        db: Database session
+
+    The skip_existing parameter in the request controls whether to skip
+    vector creation if vectors already exist for the document.
+    """
     document_service = get_document_service()
 
     metadata = {
@@ -70,7 +90,8 @@ async def scrape_url(
     document = await document_service.process_url(
         db=db,
         url=str(request.url),
-        metadata=metadata
+        metadata=metadata,
+        skip_existing=request.skip_existing
     )
 
     return document

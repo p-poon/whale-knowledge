@@ -55,6 +55,7 @@ class WebScrapRequest(BaseModel):
     industry: Optional[str] = None
     author: Optional[str] = None
     save_as_markdown: bool = True
+    skip_existing: bool = True
 
 
 class DocumentResponse(BaseModel):

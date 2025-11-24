@@ -1,0 +1,6 @@
+theme: jekyll-theme-cayman
+title: Whale Knowledge Base
+description: Production-ready RAG system with MCP integration
+show_downloads: true
+github:
+  repository_url: https://github.com/your-org/whale-knowledge

@@ -32,7 +32,8 @@ class DocumentService:
         db: Session,
         file_path: str,
         filename: str,
-        metadata: Dict[str, Any]
+        metadata: Dict[str, Any],
+        skip_existing: bool = True
     ) -> Document:
         """
         Process a PDF file and add to knowledge base.
@@ -42,6 +43,7 @@ class DocumentService:
             file_path: Path to PDF file
             filename: Original filename
             metadata: Document metadata (industry, author, etc.)
+            skip_existing: If True, skip vector creation if vectors already exist for this document
 
         Returns:
             Created Document object
@@ -93,7 +95,7 @@ class DocumentService:
             db.commit()
 
             # Process and embed chunks
-            await self._process_and_embed(db, document, text)
+            await self._process_and_embed(db, document, text, skip_existing)
 
             # Update job status
             job.status = "completed"
@@ -116,7 +118,8 @@ class DocumentService:
         self,
         db: Session,
         url: str,
-        metadata: Dict[str, Any]
+        metadata: Dict[str, Any],
+        skip_existing: bool = True
     ) -> Document:
         """
         Scrape URL and add to knowledge base.
@@ -125,6 +128,7 @@ class DocumentService:
             db: Database session
             url: URL to scrape
             metadata: Document metadata
+            skip_existing: If True, skip vector creation if vectors already exist for this document
 
         Returns:
             Created Document object
@@ -168,7 +172,7 @@ class DocumentService:
             db.refresh(document)
 
             # Process and embed chunks
-            await self._process_and_embed(db, document, text)
+            await self._process_and_embed(db, document, text, skip_existing)
 
             logger.info(f"Successfully processed URL: {url}")
             return document
@@ -185,7 +189,8 @@ class DocumentService:
         self,
         db: Session,
         document: Document,
-        text: str
+        text: str,
+        skip_existing: bool = True
     ):
         """
         Chunk text, generate embeddings, and store in Pinecone.
@@ -194,8 +199,33 @@ class DocumentService:
             db: Database session
             document: Document object
             text: Document text content
+            skip_existing: If True, skip upserting vectors that already exist in Pinecone
         """
         try:
+            # Check if vectors already exist for this document
+            existing_vector_ids = await pinecone_client.fetch_vectors_by_filter(
+                filter={"document_id": document.id}
+            )
+
+            if existing_vector_ids:
+                if skip_existing:
+                    logger.info(
+                        f"Document {document.id} already has {len(existing_vector_ids)} "
+                        f"vectors in Pinecone. Skipping vector creation."
+                    )
+                    document.status = "completed"
+                    document.chunk_count = len(existing_vector_ids)
+                    document.vector_ids = existing_vector_ids
+                    db.commit()
+                    return
+                else:
+                    logger.info(
+                        f"Document {document.id} has {len(existing_vector_ids)} existing vectors. "
+                        f"Will update with new vectors."
+                    )
+                    # Delete existing vectors before creating new ones
+                    await pinecone_client.delete_vectors(existing_vector_ids)
+
             # Create document metadata for chunks
             doc_metadata = {
                 "document_id": document.id,
