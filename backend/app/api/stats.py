@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 from app.core.database import get_db, Document
 from app.core.pinecone_client import pinecone_client
@@ -15,7 +15,7 @@ async def health_check(db: Session = Depends(get_db)):
     """Check health of all services."""
     try:
         # Check database
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db_status = "healthy"
     except Exception as e:
         db_status = f"unhealthy: {str(e)}"

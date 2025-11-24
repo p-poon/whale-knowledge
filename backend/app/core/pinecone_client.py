@@ -139,7 +139,16 @@ class PineconeClient:
         """Get index statistics."""
         try:
             stats = self.index.describe_index_stats()
-            return stats
+            # Convert Pinecone stats object to dictionary
+            return {
+                "dimension": stats.dimension,
+                "index_fullness": stats.index_fullness,
+                "total_vector_count": stats.total_vector_count,
+                "namespaces": {
+                    ns_name: {"vector_count": ns_stats.vector_count}
+                    for ns_name, ns_stats in stats.namespaces.items()
+                }
+            }
         except Exception as e:
             logger.error(f"Error getting Pinecone stats: {e}")
             raise
