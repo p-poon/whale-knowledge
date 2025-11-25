@@ -202,6 +202,8 @@ class ServiceType(str, Enum):
     """Service type for API usage audit."""
     JINA = "jina"
     PINECONE = "pinecone"
+    ANTHROPIC = "anthropic"
+    OPENAI = "openai"
 
 
 class AuditStatus(str, Enum):
@@ -294,3 +296,179 @@ class CostEstimate(BaseModel):
     total_cost: float
     period_start: datetime
     period_end: datetime
+
+
+# AI Agent Content Generation Schemas
+class ContentType(str, Enum):
+    """Type of content to generate."""
+    WHITEPAPER = "whitepaper"
+    ARTICLE = "article"
+    BLOG = "blog"
+
+
+class LLMProvider(str, Enum):
+    """LLM provider for content generation."""
+    ANTHROPIC = "anthropic"
+    OPENAI = "openai"
+
+
+class GenerationStatus(str, Enum):
+    """Status of content generation job."""
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class GenerationCustomization(BaseModel):
+    """Customization options for content generation."""
+    style: Optional[str] = "professional"  # formal, conversational, technical, professional
+    tone: Optional[str] = "neutral"  # neutral, enthusiastic, analytical, authoritative
+    audience: Optional[str] = "general"  # executives, technical, general, academic
+    length: Optional[str] = "medium"  # short, medium, long
+    target_word_count: Optional[int] = None
+    sections: Optional[List[str]] = None  # Custom section names
+    citation_style: Optional[str] = "inline"  # inline, footnotes, references
+    include_executive_summary: Optional[bool] = True
+    include_conclusion: Optional[bool] = True
+    include_references: Optional[bool] = True
+
+
+class GenerationRequest(BaseModel):
+    """Request to generate content."""
+    topic: str = Field(..., min_length=10, max_length=2000)
+    content_type: ContentType
+    document_ids: List[int] = Field(..., min_items=1)  # Selected documents to use
+    llm_provider: LLMProvider = LLMProvider.ANTHROPIC
+    llm_model: Optional[str] = None  # If None, use default for provider
+    customization: Optional[GenerationCustomization] = GenerationCustomization()
+    template_id: Optional[int] = None  # Optional template to use
+
+
+class GenerationJobResponse(BaseModel):
+    """Response after creating a generation job."""
+    job_id: str
+    status: str
+    message: str
+
+    class Config:
+        from_attributes = True
+
+
+class GenerationJobStatus(BaseModel):
+    """Status of a generation job."""
+    job_id: str
+    status: str
+    progress_percent: int
+    current_step: Optional[str]
+    result_id: Optional[int]
+    error_message: Optional[str]
+    created_at: datetime
+    started_at: Optional[datetime]
+    completed_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class GeneratedContentResponse(BaseModel):
+    """Response with generated content."""
+    id: int
+    title: str
+    content_type: str
+    content_html: str
+    content_markdown: Optional[str]
+    topic: str
+    llm_provider: str
+    llm_model: str
+    generation_params: Optional[Dict[str, Any]]
+    status: str
+    token_usage: Optional[Dict[str, Any]]
+    cost_estimate: Optional[float]
+    created_at: datetime
+    updated_at: datetime
+    source_documents: Optional[List[Dict[str, Any]]] = None
+
+    class Config:
+        from_attributes = True
+
+
+class GeneratedContentList(BaseModel):
+    """Paginated list of generated content."""
+    content: List[GeneratedContentResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class GeneratedContentUpdate(BaseModel):
+    """Update generated content."""
+    title: Optional[str] = None
+    status: Optional[str] = None
+    content_html: Optional[str] = None
+    content_markdown: Optional[str] = None
+
+
+class DocumentSuggestRequest(BaseModel):
+    """Request for AI-suggested documents."""
+    topic: str = Field(..., min_length=10, max_length=2000)
+    content_type: ContentType
+    max_documents: int = Field(default=5, ge=1, le=20)
+
+
+class SuggestedDocument(BaseModel):
+    """A suggested document with relevance score."""
+    document_id: int
+    filename: str
+    relevance_score: float
+    relevance_explanation: Optional[str]
+    chunk_count: int
+    industry: Optional[str]
+    author: Optional[str]
+
+
+class DocumentSuggestResponse(BaseModel):
+    """Response with suggested documents."""
+    topic: str
+    suggested_documents: List[SuggestedDocument]
+    total_found: int
+
+
+class ContentTemplateCreate(BaseModel):
+    """Schema for creating a content template."""
+    name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    content_type: ContentType
+    template_structure: Dict[str, Any]
+    is_public: bool = True
+
+
+class ContentTemplateResponse(BaseModel):
+    """Response with content template."""
+    id: int
+    name: str
+    description: Optional[str]
+    content_type: str
+    template_structure: Dict[str, Any]
+    is_default: bool
+    is_public: bool
+    created_by: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ContentTemplateList(BaseModel):
+    """List of content templates."""
+    templates: List[ContentTemplateResponse]
+    total: int
+
+
+class ContentTemplateUpdate(BaseModel):
+    """Update content template."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    template_structure: Optional[Dict[str, Any]] = None
+    is_public: Optional[bool] = None

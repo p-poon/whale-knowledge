@@ -16,6 +16,11 @@ pinecone==5.0.1
 sentence-transformers==3.3.1
 torch==2.6.0
 
+# LLM APIs
+anthropic>=0.39.0
+openai>=1.54.0
+tiktoken>=0.8.0
+
 # Document processing
 pypdf2==3.0.1
 python-docx==1.1.0

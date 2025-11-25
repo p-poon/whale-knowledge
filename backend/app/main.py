@@ -5,7 +5,8 @@ import logging
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.pinecone_client import pinecone_client
-from app.api import documents, query, evaluation, stats, audit
+from app.api import documents, query, evaluation, stats, audit, agent
+from app.services.template_service import template_service
 
 # Configure logging
 logging.basicConfig(
@@ -37,6 +38,7 @@ app.include_router(query.router)
 app.include_router(evaluation.router)
 app.include_router(stats.router)
 app.include_router(audit.router)
+app.include_router(agent.router)
 
 
 @app.on_event("startup")
@@ -51,6 +53,10 @@ async def startup_event():
     # Initialize Pinecone
     logger.info("Initializing Pinecone...")
     pinecone_client.initialize()
+
+    # Initialize default content templates
+    logger.info("Initializing default templates...")
+    template_service.initialize_default_templates()
 
     logger.info("Startup complete")
 

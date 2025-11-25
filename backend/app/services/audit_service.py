@@ -21,6 +21,77 @@ logger = logging.getLogger(__name__)
 class AuditService:
     """Service for logging and analyzing API usage."""
 
+    async def log_llm_usage(
+        self,
+        provider: str,
+        model: str,
+        operation: str,
+        input_tokens: int,
+        output_tokens: int,
+        status: str = "success",
+        generated_content_id: Optional[int] = None,
+        error_message: Optional[str] = None,
+        duration_ms: Optional[int] = None
+    ) -> Optional[APIUsageAudit]:
+        """
+        Log LLM API usage (async version for use in services).
+
+        Args:
+            provider: LLM provider ('anthropic' or 'openai')
+            model: Model name used
+            operation: Operation name (e.g., 'content_generation_section')
+            input_tokens: Number of input tokens
+            output_tokens: Number of output tokens
+            status: Operation status
+            generated_content_id: ID of generated content (if applicable)
+            error_message: Error message if failed
+            duration_ms: Duration in milliseconds
+
+        Returns:
+            The created audit record or None if failed
+        """
+        from app.core.database import SessionLocal
+
+        db = SessionLocal()
+        try:
+            # Calculate cost estimate
+            from app.services.llm_service import llm_service
+            cost_estimate = llm_service.estimate_cost(
+                input_tokens, output_tokens, provider, model
+            )
+
+            audit_record = APIUsageAudit(
+                request_id=str(uuid.uuid4()),
+                service=provider,
+                operation=operation,
+                status=status,
+                # LLM fields
+                llm_provider=provider,
+                llm_model=model,
+                llm_input_tokens=input_tokens,
+                llm_output_tokens=output_tokens,
+                llm_total_tokens=input_tokens + output_tokens,
+                llm_cost_estimate=cost_estimate,
+                # Common
+                generated_content_id=generated_content_id,
+                error_message=error_message,
+                duration_ms=duration_ms
+            )
+
+            db.add(audit_record)
+            db.commit()
+            db.refresh(audit_record)
+
+            logger.info(f"Logged {provider} LLM usage: {input_tokens + output_tokens} tokens, ${cost_estimate:.4f}")
+            return audit_record
+
+        except Exception as e:
+            logger.error(f"Failed to log LLM usage: {e}")
+            db.rollback()
+            return None
+        finally:
+            db.close()
+
     def log_api_usage(
         self,
         db: Session,
@@ -40,8 +111,15 @@ class AuditService:
         pinecone_namespace: Optional[str] = None,
         pinecone_read_units: Optional[int] = None,
         pinecone_write_units: Optional[int] = None,
+        # LLM fields
+        llm_provider: Optional[str] = None,
+        llm_model: Optional[str] = None,
+        llm_input_tokens: Optional[int] = None,
+        llm_output_tokens: Optional[int] = None,
+        llm_cost_estimate: Optional[float] = None,
         # Common fields
         document_id: Optional[int] = None,
+        generated_content_id: Optional[int] = None,
         user_id: Optional[str] = None,
         error_message: Optional[str] = None,
         duration_ms: Optional[int] = None
@@ -78,8 +156,16 @@ class AuditService:
                 pinecone_namespace=pinecone_namespace,
                 pinecone_read_units=pinecone_read_units,
                 pinecone_write_units=pinecone_write_units,
+                # LLM
+                llm_provider=llm_provider,
+                llm_model=llm_model,
+                llm_input_tokens=llm_input_tokens,
+                llm_output_tokens=llm_output_tokens,
+                llm_total_tokens=(llm_input_tokens + llm_output_tokens) if (llm_input_tokens and llm_output_tokens) else None,
+                llm_cost_estimate=llm_cost_estimate,
                 # Common
                 document_id=document_id,
+                generated_content_id=generated_content_id,
                 user_id=user_id,
                 error_message=error_message,
                 duration_ms=duration_ms
@@ -334,3 +420,7 @@ def get_audit_service() -> AuditService:
     if _audit_service is None:
         _audit_service = AuditService()
     return _audit_service
+
+
+# Global instance for easy import
+audit_service = get_audit_service()
