@@ -23,8 +23,8 @@ class Settings(BaseSettings):
     # LLM Settings
     default_llm_provider: str = "anthropic"  # 'anthropic' or 'openai'
     default_llm_model: Optional[str] = None  # If None, use provider default
-    anthropic_default_model: str = "claude-3-5-sonnet-20241022"
-    openai_default_model: str = "gpt-4-turbo-preview"
+    anthropic_default_model: str = "claude-3-5-sonnet-20240620"
+    openai_default_model: str = "gpt-4o-mini"  # Updated to widely available model
 
     # Embedding Model
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
@@ -43,7 +43,12 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    cors_origins: str = "http://localhost:3000,http://localhost:3001"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse CORS origins from comma-separated string to list."""
+        return [origin.strip() for origin in self.cors_origins.split(",")]
 
     # API Usage Pricing (for cost estimation)
     jina_cost_per_1k_tokens: float = 0.00005  # $0.050 per 1M tokens
@@ -53,14 +58,20 @@ class Settings(BaseSettings):
     # LLM Pricing (per 1M tokens)
     anthropic_claude_35_sonnet_input_cost: float = 3.00  # $3 per 1M input tokens
     anthropic_claude_35_sonnet_output_cost: float = 15.00  # $15 per 1M output tokens
+    openai_gpt4o_input_cost: float = 2.50  # $2.50 per 1M input tokens
+    openai_gpt4o_output_cost: float = 10.00  # $10 per 1M output tokens
+    openai_gpt4o_mini_input_cost: float = 0.15  # $0.15 per 1M input tokens
+    openai_gpt4o_mini_output_cost: float = 0.60  # $0.60 per 1M output tokens
     openai_gpt4_turbo_input_cost: float = 10.00  # $10 per 1M input tokens
     openai_gpt4_turbo_output_cost: float = 30.00  # $30 per 1M output tokens
     openai_gpt35_turbo_input_cost: float = 0.50  # $0.50 per 1M input tokens
     openai_gpt35_turbo_output_cost: float = 1.50  # $1.50 per 1M output tokens
 
     class Config:
-        env_file = ".env"
+        # Look for .env in project root (parent of backend directory)
+        env_file = "../.env"
         case_sensitive = False
+        extra = "ignore"  # Ignore extra fields from .env (e.g., frontend vars)
 
 
 # Global settings instance

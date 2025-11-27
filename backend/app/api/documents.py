@@ -183,7 +183,13 @@ async def get_document_content(
         return {
             "document_id": document_id,
             "filename": document.filename,
-            "content": content
+            "source_type": document.source_type,
+            "source_url": document.source_url,
+            "industry": document.industry,
+            "author": document.author,
+            "content": content,
+            "chunk_count": document.chunk_count,
+            "created_at": document.created_at.isoformat() if document.created_at else None
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

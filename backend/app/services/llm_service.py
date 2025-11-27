@@ -371,16 +371,22 @@ class LLMService:
                 output_cost = settings.anthropic_claude_35_sonnet_output_cost
 
         elif provider == "openai":
-            if "gpt-4" in model and "turbo" in model:
+            if "gpt-4o-mini" in model:
+                input_cost = settings.openai_gpt4o_mini_input_cost
+                output_cost = settings.openai_gpt4o_mini_output_cost
+            elif "gpt-4o" in model:
+                input_cost = settings.openai_gpt4o_input_cost
+                output_cost = settings.openai_gpt4o_output_cost
+            elif "gpt-4" in model and "turbo" in model:
                 input_cost = settings.openai_gpt4_turbo_input_cost
                 output_cost = settings.openai_gpt4_turbo_output_cost
             elif "gpt-3.5" in model:
                 input_cost = settings.openai_gpt35_turbo_input_cost
                 output_cost = settings.openai_gpt35_turbo_output_cost
             else:
-                # Default to GPT-4 Turbo pricing (conservative estimate)
-                input_cost = settings.openai_gpt4_turbo_input_cost
-                output_cost = settings.openai_gpt4_turbo_output_cost
+                # Default to GPT-4o-mini pricing (conservative estimate)
+                input_cost = settings.openai_gpt4o_mini_input_cost
+                output_cost = settings.openai_gpt4o_mini_output_cost
         else:
             logger.warning(f"Unknown provider {provider}, returning 0 cost")
             return 0.0

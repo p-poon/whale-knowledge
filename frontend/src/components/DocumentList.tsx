@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { listDocuments, deleteDocument, type Document } from '@/lib/api';
-import { Trash2, FileText, Globe, FileIcon, Loader2 } from 'lucide-react';
+import { Trash2, FileText, Globe, FileIcon, Loader2, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function DocumentList({ refreshKey }: { refreshKey?: number }) {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [industryFilter, setIndustryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -120,13 +122,22 @@ export default function DocumentList({ refreshKey }: { refreshKey?: number }) {
                 </div>
               </div>
 
-              <button
-                onClick={() => handleDelete(doc.id)}
-                className="text-red-500 hover:text-red-700 p-2"
-                title="Delete document"
-              >
-                <Trash2 size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => router.push(`/documents/${doc.id}`)}
+                  className="text-blue-500 hover:text-blue-700 p-2"
+                  title="View document"
+                >
+                  <Eye size={18} />
+                </button>
+                <button
+                  onClick={() => handleDelete(doc.id)}
+                  className="text-red-500 hover:text-red-700 p-2"
+                  title="Delete document"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
           ))
         )}

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import DocumentUpload from '@/components/DocumentUpload';
 import DocumentList from '@/components/DocumentList';
 import ChatInterface from '@/components/ChatInterface';
 import EvaluationDashboard from '@/components/EvaluationDashboard';
 import StatsPanel from '@/components/StatsPanel';
-import { Database, MessageSquare, BarChart3, FileText } from 'lucide-react';
+import { Database, MessageSquare, BarChart3, FileText, Sparkles, Library } from 'lucide-react';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'documents' | 'query' | 'evaluation'>('documents');
@@ -23,11 +24,33 @@ export default function Home() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <Database size={32} className="text-blue-500" />
-            <h1 className="text-3xl font-bold text-gray-900">Whale Knowledge Base</h1>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <Database size={32} className="text-blue-500" />
+                <h1 className="text-3xl font-bold text-gray-900">Whale Knowledge Base</h1>
+              </div>
+              <p className="text-gray-600 mt-2">RAG-powered document knowledge base with MCP integration</p>
+            </div>
+
+            {/* AI Generation Links */}
+            <div className="flex gap-3">
+              <Link
+                href="/generate"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-md"
+              >
+                <Sparkles className="w-5 h-5" />
+                Generate Content
+              </Link>
+              <Link
+                href="/generated"
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all"
+              >
+                <Library className="w-5 h-5" />
+                Content Library
+              </Link>
+            </div>
           </div>
-          <p className="text-gray-600 mt-2">RAG-powered document knowledge base with MCP integration</p>
         </div>
       </header>
 

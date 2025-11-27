@@ -259,7 +259,7 @@ Return only the title, nothing else."""
         previous_sections: List[Dict[str, Any]],
         llm_provider: str,
         llm_model: Optional[str],
-        customization: Dict[str, Any]
+        customization: Optional[Dict[str, Any]]
     ) -> tuple[str, Dict[str, int]]:
         """
         Generate a single section.
@@ -267,6 +267,9 @@ Return only the title, nothing else."""
         Returns:
             Tuple of (section_content, token_usage)
         """
+        # Normalize customization to avoid NoneType errors
+        customization = customization or {}
+
         section_name = section_template["name"]
         section_prompt = section_template["prompt"]
         max_words = section_template.get("max_words", 500)
@@ -353,6 +356,9 @@ Now write the "{section_name}" section. Write in markdown format. Be specific, d
         Returns:
             HTML string
         """
+        # Normalize customization to avoid NoneType errors
+        customization = customization or {}
+
         html_parts = []
 
         # Add CSS (will be extracted to separate file later)
@@ -371,7 +377,7 @@ Now write the "{section_name}" section. Write in markdown format. Be specific, d
         html_parts.append('</div>')
 
         # Add table of contents if requested
-        if customization and customization.get("include_executive_summary"):
+        if customization.get("include_executive_summary"):
             html_parts.append('<div class="toc">')
             html_parts.append('<h2>Table of Contents</h2>')
             html_parts.append('<ul>')
@@ -554,6 +560,9 @@ Now write the "{section_name}" section. Write in markdown format. Be specific, d
         """
         db = SessionLocal()
         try:
+            # Normalize customization to avoid NoneType errors
+            customization = customization or {}
+
             # Calculate cost
             cost_estimate = llm_service.estimate_cost(
                 content_data["token_usage"]["input"],
@@ -578,7 +587,12 @@ Now write the "{section_name}" section. Write in markdown format. Be specific, d
             )
 
             db.add(content)
-            db.flush()  # Get the ID
+            db.commit()  # Commit to ensure ID is assigned
+            db.refresh(content)  # Refresh to get the ID
+
+            # Verify we have an ID
+            if not content.id:
+                raise ValueError("Failed to get content ID after commit")
 
             # Create source document links
             for doc_id in document_ids:
@@ -591,7 +605,6 @@ Now write the "{section_name}" section. Write in markdown format. Be specific, d
                 db.add(source_link)
 
             db.commit()
-            db.refresh(content)
 
             logger.info(f"Saved generated content: {content.id}")
             return content.id
