@@ -63,6 +63,12 @@ services:
 
       # CORS
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
+
+      # Confluence MCP
+      CONFLUENCE_URL: ${CONFLUENCE_URL}
+      CONFLUENCE_EMAIL: ${CONFLUENCE_EMAIL}
+      CONFLUENCE_API_TOKEN: ${CONFLUENCE_API_TOKEN}
+      CONFLUENCE_SPACE_KEY: ${CONFLUENCE_SPACE_KEY:-DS}
     ports:
       - "8000:8000"
     volumes:

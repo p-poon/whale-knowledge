@@ -11,6 +11,7 @@ from app.services.embeddings import get_embedding_generator
 from app.services.chunking import get_chunker
 from app.services.pdf_processor import get_pdf_processor
 from app.services.jina_scraper import get_jina_scraper
+from app.services.mcp_client import get_confluence_client
 from app.models.schemas import SourceType
 
 logger = logging.getLogger(__name__)
@@ -104,6 +105,26 @@ class DocumentService:
             db.commit()
 
             logger.info(f"Successfully processed PDF: {filename}")
+            
+            # Create Confluence page
+            try:
+                confluence_client = get_confluence_client()
+                tags = []
+                if document.industry:
+                    tags.append(document.industry)
+                if document.author:
+                    tags.append(document.author)
+                
+                await confluence_client.create_page(
+                    title=f"Doc: {filename}",
+                    content=text[:10000], # Truncate if too long, or use full text
+                    tags=tags,
+                    file_path=file_path
+                )
+            except Exception as e:
+                logger.error(f"Failed to trigger Confluence page creation: {e}")
+                # Don't fail the main process
+
             return document
 
         except Exception as e:
@@ -176,6 +197,25 @@ class DocumentService:
             await self._process_and_embed(db, document, text, skip_existing)
 
             logger.info(f"Successfully processed URL: {url}")
+            
+            # Create Confluence page
+            try:
+                confluence_client = get_confluence_client()
+                tags = []
+                if document.industry:
+                    tags.append(document.industry)
+                if document.author:
+                    tags.append(document.author)
+                
+                await confluence_client.create_page(
+                    title=f"Web: {url}",
+                    content=text[:10000], # Truncate if too long
+                    tags=tags
+                )
+            except Exception as e:
+                logger.error(f"Failed to trigger Confluence page creation: {e}")
+                # Don't fail the main process
+
             return document
 
         except Exception as e:
@@ -319,6 +359,20 @@ class DocumentService:
             db.commit()
 
             logger.info(f"Deleted document {document_id}")
+            
+            # Delete Confluence page
+            try:
+                confluence_client = get_confluence_client()
+                title = ""
+                if document.source_type == SourceType.WEB.value:
+                    title = f"Web: {document.source_url}"
+                else:
+                    title = f"Doc: {document.filename}"
+                    
+                await confluence_client.delete_page(title=title)
+            except Exception as e:
+                logger.error(f"Failed to trigger Confluence page deletion: {e}")
+                # Don't fail the deletion process
 
         except Exception as e:
             logger.error(f"Error deleting document {document_id}: {e}")

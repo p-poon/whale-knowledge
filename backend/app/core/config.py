@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from typing import Optional
 
 
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     default_llm_provider: str = "anthropic"  # 'anthropic' or 'openai'
     default_llm_model: Optional[str] = None  # If None, use provider default
     anthropic_default_model: str = "claude-3-5-sonnet-20240620"
-    openai_default_model: str = "gpt-4o-mini"  # Updated to widely available model
+    openai_default_model: str = "gpt-4-turbo-preview"
 
     # Embedding Model
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
@@ -44,6 +45,14 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
+
+    # Confluence MCP
+    confluence_mcp_command: str = "npx"
+    confluence_mcp_args: list[str] = ["-y", "@aiondadotcom/mcp-confluence-server"]
+    confluence_url: Optional[str] = Field(default=None, alias="CONFLUENCE_URL")
+    confluence_email: Optional[str] = Field(default=None, alias="CONFLUENCE_EMAIL")
+    confluence_api_token: Optional[str] = Field(default=None, alias="CONFLUENCE_API_TOKEN")
+    confluence_space_key: str = Field(default="DS", alias="CONFLUENCE_SPACE_KEY")
 
     @property
     def cors_origins_list(self) -> list[str]:
