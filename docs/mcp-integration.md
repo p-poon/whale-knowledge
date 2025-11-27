@@ -46,7 +46,7 @@ Add the following to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "whale-knowledge": {
-      "command": "python",
+      "command": "/absolute/path/to/whale-knowledge/backend/venv/bin/python",
       "args": ["-m", "app.mcp_server"],
       "cwd": "/absolute/path/to/whale-knowledge/backend",
       "env": {
@@ -55,7 +55,8 @@ Add the following to your `claude_desktop_config.json`:
         "PINECONE_ENVIRONMENT": "us-west1-gcp",
         "PINECONE_INDEX_NAME": "whale-knowledge",
         "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2",
-        "EMBEDDING_DIMENSION": "384"
+        "EMBEDDING_DIMENSION": "384",
+        "PYTHONPATH": "/Users/phoebe.poon/whale-knowledge/whale-knowledge/backend",
       }
     }
   }
@@ -64,33 +65,11 @@ Add the following to your `claude_desktop_config.json`:
 
 **Important:** Replace `/absolute/path/to/whale-knowledge/backend` with the actual absolute path on your system.
 
-### Step 3: Activate Python Environment
-
-Ensure your Python virtual environment is accessible. Add it to the configuration if needed:
-
-```json
-{
-  "mcpServers": {
-    "whale-knowledge": {
-      "command": "/absolute/path/to/whale-knowledge/venv/bin/python",
-      "args": ["-m", "app.mcp_server"],
-      "cwd": "/absolute/path/to/whale-knowledge/backend",
-      "env": {
-        "DATABASE_URL": "postgresql://whale_user:whale_pass@localhost:5432/whale_knowledge",
-        "PINECONE_API_KEY": "your_pinecone_api_key",
-        "PINECONE_ENVIRONMENT": "us-west1-gcp",
-        "PINECONE_INDEX_NAME": "whale-knowledge"
-      }
-    }
-  }
-}
-```
-
-### Step 4: Restart Claude Desktop
+### Step 3: Restart Claude Desktop
 
 Completely quit and restart Claude Desktop for the changes to take effect.
 
-### Step 5: Test the Integration
+### Step 4: Test the Integration
 
 In Claude Desktop, try these commands:
 
