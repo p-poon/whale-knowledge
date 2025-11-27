@@ -41,6 +41,7 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+
 # IDEs
 .vscode/
 .idea/
@@ -55,7 +56,9 @@ yarn-error.log*
 backend/storage/
 backend/documents/
 *.pdf
-*.md
+
+# Dev documentation
+internal-dev-docs/
 
 # Database
 *.db
