@@ -33,23 +33,7 @@ export default function Home() {
               <p className="text-gray-600 mt-2">RAG-powered document knowledge base with MCP integration</p>
             </div>
 
-            {/* AI Generation Links */}
-            <div className="flex gap-3">
-              <Link
-                href="/generate"
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-md"
-              >
-                <Sparkles className="w-5 h-5" />
-                Generate Content
-              </Link>
-              <Link
-                href="/generated"
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all"
-              >
-                <Library className="w-5 h-5" />
-                Content Library
-              </Link>
-            </div>
+
           </div>
         </div>
       </header>

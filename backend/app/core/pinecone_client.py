@@ -56,7 +56,7 @@ class PineconeClient:
         vectors: List[tuple],  # [(id, embedding, metadata), ...]
         namespace: str = "",
         db: Optional[Session] = None,
-        document_id: Optional[int] = None
+        batch_size: int = 100
     ) -> Dict[str, Any]:
         """
         Upsert vectors to Pinecone.
@@ -66,22 +66,30 @@ class PineconeClient:
             namespace: Optional namespace for multi-tenancy
             db: Database session for audit logging (optional)
             document_id: Document ID for tracking (optional)
+            batch_size: Number of vectors to upsert in each batch (default: 100)
 
         Returns:
-            Upsert response from Pinecone
+            Upsert response from Pinecone (last batch response)
         """
         start_time = time.time()
         audit_service = get_audit_service()
         status = "success"
         error_msg = None
         vector_count = len(vectors)
+        last_response = {}
 
         try:
-            response = self.index.upsert(
-                vectors=vectors,
-                namespace=namespace
-            )
-            logger.info(f"Upserted {vector_count} vectors to Pinecone")
+            # Process vectors in batches
+            for i in range(0, vector_count, batch_size):
+                batch = vectors[i : i + batch_size]
+                logger.info(f"Upserting batch {i // batch_size + 1}: {len(batch)} vectors")
+                
+                last_response = self.index.upsert(
+                    vectors=batch,
+                    namespace=namespace
+                )
+            
+            logger.info(f"Successfully upserted {vector_count} vectors to Pinecone in batches")
 
             # Log to audit table if db session provided
             if db:
@@ -103,7 +111,7 @@ class PineconeClient:
                     duration_ms=duration_ms
                 )
 
-            return response
+            return last_response
         except Exception as e:
             status = "failed"
             error_msg = str(e)
